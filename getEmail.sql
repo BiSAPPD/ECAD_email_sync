@@ -4,83 +4,126 @@ CREATE OR REPLACE FUNCTION f_IsValidEmail(text) returns BOOLEAN AS
 
 WITH  list_emails
 AS ( 
--- select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
--- from 
--- dblink('dbname=loreal', 
--- 'select 
--- distinct usr.email,
--- current_database() as brand, 
--- usr.fname,
--- usr.lname,
--- 
--- (case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
--- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
--- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
--- 	 else ''master''
--- 	end) as role_type,
--- 
--- (case  when usr.role like  ''salon_manager'' then ''3'' 
--- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
--- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
--- 	 else ''4''
--- 	end) as role_type_num,
--- 
--- usr.role,
--- 	
--- 
--- trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
--- trim(usr.mobile_number),
--- sln.com_mreg,
--- (Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
--- sln.id
--- 
--- from users as usr
--- left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
--- 
--- Where char_length(usr.email) > 5' )
--- 
--- AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
--- 
--- union all
--- 
--- select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
--- from 
--- dblink('dbname=matrix', 
--- 'select 
--- distinct usr.email,
--- current_database() as brand, 
--- usr.fname,
--- usr.lname,
--- 
--- (case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
--- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
--- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
--- 	 else ''master''
--- 	end) as role_type,
--- 
--- (case  when usr.role like  ''salon_manager'' then ''3'' 
--- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
--- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
--- 	 else ''4''
--- 	end) as role_type_num,
--- 
--- usr.role,
--- 	
--- 
--- trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
--- trim(usr.mobile_number),
--- sln.com_mreg,
--- (Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
--- sln.id
--- 
--- from users as usr
--- left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
--- 
--- Where char_length(usr.email) > 5' )
--- 
--- AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
--- 
--- union all
+select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
+from 
+dblink('dbname=loreal', 
+'select 
+distinct usr.email,
+current_database() as brand, 
+usr.fname,
+usr.lname,
+
+(case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+	 else ''master''
+	end) as role_type,
+
+(case  when usr.role like  ''salon_manager'' then ''3'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+	 else ''4''
+	end) as role_type_num,
+
+usr.role,
+	
+
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+trim(usr.mobile_number),
+sln.com_mreg,
+(Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+sln.id
+
+from users as usr
+left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
+
+Where char_length(usr.email) > 5 
+
+union all
+
+select sln.email,
+
+current_database() as brand, 
+'''' As fname,
+'''' as lname,
+''salon'' as role_type,
+''4'' as role_type_num,
+''salon'' as role,
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+'''' as mobile_number,
+sln.com_mreg,
+sln.city_name_geographic as geo_city, 
+sln.id
+ 
+from salons as sln
+
+')
+AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
+
+union all
+
+
+--'--------------------------------------------------------------------------------------------------------- 
+
+select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
+from 
+dblink('dbname=matrix', 
+'select 
+distinct usr.email,
+current_database() as brand, 
+usr.fname,
+usr.lname,
+
+(case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+	 else ''master''
+	end) as role_type,
+
+(case  when usr.role like  ''salon_manager'' then ''3'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+	 else ''4''
+	end) as role_type_num,
+
+usr.role,
+	
+
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+trim(usr.mobile_number),
+sln.com_mreg,
+(Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+sln.id
+
+from users as usr
+left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
+
+Where char_length(usr.email) > 5
+
+union all
+
+select sln.email,
+
+current_database() as brand, 
+'''' As fname,
+'''' as lname,
+''salon'' as role_type,
+''4'' as role_type_num,
+''salon'' as role,
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+'''' as mobile_number,
+sln.com_mreg,
+sln.city_name_geographic as geo_city, 
+sln.id
+ 
+from salons as sln
+
+')
+
+
+AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
+
+union all
 
 select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
 from 
@@ -115,7 +158,27 @@ sln.id
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
-Where char_length(usr.email) > 5' )
+Where char_length(usr.email) > 5
+
+union all
+
+select sln.email,
+
+current_database() as brand, 
+'''' As fname,
+'''' as lname,
+''salon'' as role_type,
+''4'' as role_type_num,
+''salon'' as role,
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+'''' as mobile_number,
+sln.com_mreg,
+sln.city_name_geographic as geo_city, 
+sln.id
+ 
+from salons as sln
+
+')
 
 AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
@@ -154,7 +217,27 @@ sln.id
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
-Where char_length(usr.email) > 5' )
+Where char_length(usr.email) > 5
+
+union all
+
+select sln.email,
+
+current_database() as brand, 
+'''' As fname,
+'''' as lname,
+''salon'' as role_type,
+''4'' as role_type_num,
+''salon'' as role,
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+'''' as mobile_number,
+sln.com_mreg,
+sln.city_name_geographic as geo_city, 
+sln.id
+ 
+from salons as sln
+
+')
 
 AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
@@ -193,7 +276,27 @@ sln.id
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
-Where char_length(usr.email) > 5' )
+Where char_length(usr.email) > 5
+
+union all
+
+select sln.email,
+
+current_database() as brand, 
+'''' As fname,
+'''' as lname,
+''salon'' as role_type,
+''4'' as role_type_num,
+''salon'' as role,
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+'''' as mobile_number,
+sln.com_mreg,
+sln.city_name_geographic as geo_city, 
+sln.id
+ 
+from salons as sln
+
+')
 
 AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
