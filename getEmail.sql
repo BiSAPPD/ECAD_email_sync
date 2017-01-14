@@ -2,248 +2,244 @@ CREATE OR REPLACE FUNCTION f_IsValidEmail(text) returns BOOLEAN AS
 'select $1 ~ ''^[^@\s]+@[^@\s]+(\.[^@\s]+)+$'' as result
 ' LANGUAGE sql;
 
-WITH RECURSIVE list_emails (email)
+WITH  list_emails
 AS ( 
-select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, fname, lname, role, salon_name, mobile_number, com_mreg, sln_id_lp, sln_id_mx, sln_id_kr, sln_id_rd, sln_id_es 
-from 
-dblink('dbname=loreal', 
-'select 
-distinct usr.email,
- 
-current_database() as brand_LP, 
-Null as brand_MX, 
-Null as brand_KR, 
-Null as brand_RD, 
-Null as brand_ES,
+-- select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
+-- from 
+-- dblink('dbname=loreal', 
+-- 'select 
+-- distinct usr.email,
+-- current_database() as brand, 
+-- usr.fname,
+-- usr.lname,
+-- 
+-- (case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+-- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+-- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+-- 	 else ''master''
+-- 	end) as role_type,
+-- 
+-- (case  when usr.role like  ''salon_manager'' then ''3'' 
+-- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+-- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+-- 	 else ''4''
+-- 	end) as role_type_num,
+-- 
+-- usr.role,
+-- 	
+-- 
+-- trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+-- trim(usr.mobile_number),
+-- sln.com_mreg,
+-- (Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+-- sln.id
+-- 
+-- from users as usr
+-- left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
+-- 
+-- Where char_length(usr.email) > 5' )
+-- 
+-- AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
+-- 
+-- union all
+-- 
+-- select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
+-- from 
+-- dblink('dbname=matrix', 
+-- 'select 
+-- distinct usr.email,
+-- current_database() as brand, 
+-- usr.fname,
+-- usr.lname,
+-- 
+-- (case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+-- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+-- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+-- 	 else ''master''
+-- 	end) as role_type,
+-- 
+-- (case  when usr.role like  ''salon_manager'' then ''3'' 
+-- 	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+-- 	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+-- 	 else ''4''
+-- 	end) as role_type_num,
+-- 
+-- usr.role,
+-- 	
+-- 
+-- trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+-- trim(usr.mobile_number),
+-- sln.com_mreg,
+-- (Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+-- sln.id
+-- 
+-- from users as usr
+-- left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
+-- 
+-- Where char_length(usr.email) > 5' )
+-- 
+-- AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
+-- 
+-- union all
 
-usr.fname,
-usr.lname,
-usr.role,
-trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
-trim(usr.mobile_number),
-sln.com_mreg,
-
-sln.id as sln_id_lp,
-Null as sln_id_mx,
-Null as sln_id_kr,
-Null as sln_id_rd,
-Null as sln_id_es
-
-from users as usr
-left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
-
-Where char_length(usr.email) > 5' )
-
-AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, fname text, lname text, role text, salon_name text, mobile_number text, com_mreg text, sln_id_lp int,
-sln_id_mx int, sln_id_kr int , sln_id_rd int , sln_id_es int)
-
-union all
-
-select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, fname, lname, role, salon_name, mobile_number, com_mreg, sln_id_lp, sln_id_mx, sln_id_kr, sln_id_rd, sln_id_es 
-from 
-dblink('dbname=matrix', 
-'select 
-distinct usr.email,
- 
-Null as brand_LP, 
-current_database() as brand_MX, 
-Null as brand_KR, 
-Null as brand_RD, 
-Null as brand_ES,
-
-usr.fname,
-usr.lname,
-usr.role,
-trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
-trim(usr.mobile_number),
-sln.com_mreg,
-
-Null as sln_id_lp,
-sln.id as sln_id_mx,
-Null as sln_id_kr,
-Null as sln_id_rd,
-Null as sln_id_es
-
-from users as usr
-left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
-
-Where char_length(usr.email) > 5' )
-
-AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, fname text, lname text, role text, salon_name text, mobile_number text, com_mreg text, sln_id_lp int,
-sln_id_mx int, sln_id_kr int , sln_id_rd int , sln_id_es int)
-
-union all
-
-select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, fname, lname, role, salon_name, mobile_number, com_mreg, sln_id_lp, sln_id_mx, sln_id_kr, sln_id_rd, sln_id_es 
+select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
 from 
 dblink('dbname=luxe', 
 'select 
 distinct usr.email,
- 
-Null as brand_LP, 
-Null as brand_MX, 
-current_database() as brand_KR, 
-Null as brand_RD, 
-Null as brand_ES,
-
+current_database() as brand, 
 usr.fname,
 usr.lname,
-usr.role,
-trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
-Trim(usr.mobile_number),
-sln.com_mreg,
 
-Null as sln_id_lp,
-Null as sln_id_mx,
-sln.id as sln_id_kr,
-Null as sln_id_rd,
-Null as sln_id_es
+(case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+	 else ''master''
+	end) as role_type,
+
+(case  when usr.role like  ''salon_manager'' then ''3'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+	 else ''4''
+	end) as role_type_num,
+
+usr.role,
+	
+
+trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
+trim(usr.mobile_number),
+sln.com_mreg,
+(Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+sln.id
 
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
 Where char_length(usr.email) > 5' )
 
-AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, fname text, lname text, role text, salon_name text, mobile_number text, com_mreg text, sln_id_lp int,
-sln_id_mx int, sln_id_kr int , sln_id_rd int , sln_id_es int)
+AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
 union all
 
-select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, fname, lname, role, salon_name, mobile_number, com_mreg, sln_id_lp, sln_id_mx, sln_id_kr, sln_id_rd, sln_id_es 
+select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
 from 
 dblink('dbname=redken', 
 'select 
 distinct usr.email,
- 
-Null as brand_LP, 
-Null as brand_MX, 
-Null as brand_KR, 
-current_database() as brand_RD, 
-Null as brand_ES,
-
+current_database() as brand, 
 usr.fname,
 usr.lname,
+
+(case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+	 else ''master''
+	end) as role_type,
+
+(case  when usr.role like  ''salon_manager'' then ''3'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+	 else ''4''
+	end) as role_type_num,
+
 usr.role,
+	
+
 trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
 trim(usr.mobile_number),
 sln.com_mreg,
-
-Null as sln_id_lp,
-Null as sln_id_mx,
-Null as sln_id_kr,
-sln.id as sln_id_rd,
-Null as sln_id_es
+(Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+sln.id
 
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
 Where char_length(usr.email) > 5' )
 
-AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, fname text, lname text, role text, salon_name text, mobile_number text, com_mreg text, sln_id_lp int,
-sln_id_mx int, sln_id_kr int , sln_id_rd int , sln_id_es int)
+AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
 union all
 
-select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, fname, lname, role, salon_name, mobile_number, com_mreg, sln_id_lp, sln_id_mx, sln_id_kr, sln_id_rd, sln_id_es 
+select email , brand, fname, lname, role_type, role_type_num, role, salon_name, mobile_number, com_mreg, geo_city, sln_id 
 from 
 dblink('dbname=essie', 
 'select 
 distinct usr.email,
- 
-Null as brand_LP, 
-Null as brand_MX, 
-Null as brand_KR, 
-Null as brand_RD, 
-current_database() as brand_ES,
-
+current_database() as brand, 
 usr.fname,
 usr.lname,
+
+(case  when usr.role like  ''salon_manager'' then ''salon_manager'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''educater'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''commercial''	
+	 else ''master''
+	end) as role_type,
+
+(case  when usr.role like  ''salon_manager'' then ''3'' 
+	 when usr.role in (''technolog'', ''studio_manager'' , ''studio_administrator'', ''admin'') then ''2'' 
+	 when usr.role in(''representative'', ''cs'', ''dr'', ''supervisor'') then ''1''	
+	 else ''4''
+	end) as role_type_num,
+
 usr.role,
+	
+
 trim (sln.name || ''. '' || SLN.address || ''. ''|| sln.city_name_geographic) as "salon_name",
 trim(usr.mobile_number),
 sln.com_mreg,
-
-Null as sln_id_lp,
-Null as sln_id_mx,
-Null as sln_id_kr,
-Null as sln_id_rd,
-sln.id as sln_id_es
+(Case when sln.city_name_geographic is not Null Then sln.city_name_geographic else usr.city_name end) as geo_city, 
+sln.id
 
 from users as usr
 left join salons as sln ON sln.id = usr.salon_id or usr.id = sln.salon_manager_id
 
 Where char_length(usr.email) > 5' )
 
-AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, fname text, lname text, role text, salon_name text, mobile_number text, com_mreg text, sln_id_lp int,
-sln_id_mx int, sln_id_kr int , sln_id_rd int , sln_id_es int)
+AS  (email text, brand text, fname text, lname text, role_type text, role_type_num int, role text, salon_name text, mobile_number text, com_mreg text, geo_city text, sln_id int)
 
 
-) SELECT distinct lml.email, 
-Concat( (Case when lml_lp.brand_lp is not Null then 'LP; ' end), 
-	(Case when lml_mx.brand_mx is not Null then 'MX; ' end),
-	(Case when lml_kr.brand_kr is not Null then 'KR; ' end),
-	(Case when lml_rd.brand_rd is not Null then 'RD; ' end),
-	(Case when lml_es.brand_es is not Null then 'ES; ' end)) as brand,
+) , uniq_email_list (email) as (select distinct lml.email from list_emails as lml order by lml.email)
+ 
+SELECT 
+ulml.email,
 
-(case 	when lml.role like 'salon_manager' then 'salon_manager' else
-	(Case when lml.role like '%technolog%' then 'educater' else
-	(case when lml.role in ('%partimer%', 'partner', 'studio_manager' , 'studio_administrator') then 'educater' else
-	(case when lml.role in('%representative%', 'cs', 'dr', 'supervisor') then 'commercial'	else 'master'
-	end)end)end)end) as role
+Concat( 	
+	(Case when Sum((Case when lml.brand = 'loreal' then 1 else 0 end)) over (partition by ulml.email) <> 0 Then 'LP;' end) ,
+	(Case when Sum((Case when lml.brand = 'matrix' then 1 else 0 end)) over (partition by ulml.email) <> 0 Then 'MX;' end),
+	(Case when Sum((Case when lml.brand = 'luxe' then 1 else 0 end)) over (partition by ulml.email) <> 0 Then 'KR;' end), 
+	(Case when Sum((Case when lml.brand = 'redken' then 1 else 0 end)) over (partition by ulml.email) <> 0 Then 'RD;' end), 
+	(Case when Sum((Case when lml.brand = 'essie' then 1 else 0 end)) over (partition by ulml.email) <> 0 Then 'ES;' end)),
 
---(Case 
---	when lml_lp.lname is not Null then lml_lp.lname 
---	when lml_mx.lname is not Null then lml_mx.lname
---	when lml_kr.lname is not Null then lml_kr.lname
---	when lml_rd.lname is not Null then lml_rd.lname
---	when lml_es.lname is not Null then lml_es.lname
---	end) as "Last Name",
---
--- (Case 
---	when lml_lp.fname is not Null then lml_lp.fname 
---	when lml_mx.fname is not Null then lml_mx.fname
---	when lml_kr.fname is not Null then lml_kr.fname
---	when lml_rd.fname is not Null then lml_rd.fname
---	when lml_es.fname is not Null then lml_es.fname
---	end) as "First Name",
---
- --(Case 
---	when lml_lp.salon_name is not Null then lml_lp.salon_name 
---	when lml_mx.salon_name is not Null then lml_mx.salon_name
---	when lml_kr.salon_name is not Null then lml_kr.salon_name
---	when lml_rd.salon_name is not Null then lml_rd.salon_name
---	when lml_es.salon_name is not Null then lml_es.salon_name
---	end) as "salon_name",
---
---  (Case 
---	when lml_lp.mobile_number is not Null then lml_lp.mobile_number 
---	when lml_mx.mobile_number is not Null then lml_mx.mobile_number
---	when lml_kr.mobile_number is not Null then lml_kr.mobile_number
---	when lml_rd.mobile_number is not Null then lml_rd.mobile_number
---	when lml_es.mobile_number is not Null then lml_es.mobile_number
---	end) as "mobile_number",
---
---  (Case 
---	when lml_lp.com_mreg is not Null then lml_lp.com_mreg 
---	when lml_mx.com_mreg is not Null then lml_mx.com_mreg
---	when lml_kr.com_mreg is not Null then lml_kr.com_mreg
---	when lml_rd.com_mreg is not Null then lml_rd.com_mreg
---	when lml_es.com_mreg is not Null then lml_es.com_mreg
---	end) as "com_mreg"
+lml.role_type, lml.role, lml.fname, lml.lname, lml.salon_name,lml.com_mreg, lml.geo_city, lml.sln_id, 
 
-  FROM list_emails as lml
-  left join list_emails as lml_lp on lml.email = lml_lp.email and lml_lp.brand_lp = 'loreal'
-  left join list_emails as lml_mx on lml.email = lml_mx.email and lml_mx.brand_mx = 'matrix'
-  left join list_emails as lml_kr on lml.email = lml_kr.email and lml_kr.brand_kr = 'luxe'
-  left join list_emails as lml_rd on lml.email = lml_rd.email and lml_rd.brand_rd = 'redken'
-  left join list_emails as lml_es on lml.email = lml_es.email and lml_es.brand_es = 'essie'
+row_number() over (partition by ulml.email order by lml.role_type_num, lml.email) 
+
+FROM uniq_email_list as ulml 
+left join list_emails as lml ON ulml.email = lml.email
+
+-- left join 
+-- 	dblink('dbname=academie', 
+-- 	'select spcr.status as status, spc.id as id, spc.name as name, spc.brand_id as brand_id, spcr.salon_id as salon_id
+-- 
+-- 	from special_program_club_records as spcr
+-- 	left join special_program_clubs as spc ON spcr.club_id = spc.id') AS spse (status  text, id integer, name text, brand_id  integer, salon_id  integer )
+-- 	ON
+-- 	lml.sln_id = spse.salon_id and spse.brand_id =  
+-- 
+-- (Case lml.brand
+--                 When 'loreal' then 1
+--                 When 'matrix' then 5
+--                 When 'luxe' then 6
+--                 When 'redken' then 7
+--                 When 'essie' then 3
+--                 End)
+-- 	and 
+-- 		(Case  when  spse.name like '%Emotion%' then 1 Else 
+-- 			(Case when spse.name like '%Expert%' then 1 else
+-- 				(Case when spse.name like '%МБК%' then 1 else 0 end)end)end) = 1
 
   
+Where f_IsValidEmail(ulml.email)  
 
-  
-  Where f_IsValidEmail(lml.email) 
-group by lml.email, lml_lp.brand_lp, lml_mx.brand_mx, lml_kr.brand_kr, lml_rd.brand_rd, lml_es.brand_es, lml.role, lml_lp.lname, lml_mx.lname, lml_kr.lname, lml_rd.lname, lml_es.lname, lml_lp.fname, 
-lml_mx.fname, lml_kr.fname, lml_rd.fname, lml_es.fname,  lml_lp.salon_name, lml_mx.salon_name, lml_kr.salon_name, lml_rd.salon_name, lml_es.salon_name, lml_lp.mobile_number, lml_mx.mobile_number, lml_kr.mobile_number, lml_rd.mobile_number, lml_es.mobile_number,  
-lml_lp.com_mreg, lml_mx.com_mreg, lml_kr.com_mreg, lml_rd.com_mreg, lml_es.com_mreg 
 
- order by lml.email
+order by ulml.email, lml.role_type_num
