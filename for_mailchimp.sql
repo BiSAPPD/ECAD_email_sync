@@ -32,22 +32,24 @@ clients_dataset as (
 ---
 ---
 select
-	lower(usr.email), 
-	usr.id,
+	usr.id as "User_ID",
+	lower(usr.email) as "Email Address",
+	usr.mobile_number,
 	usr.first_name, 
 	usr.last_name, 
 	'B2B' as Base,
-	array_agg(distinct usr_d.user_function),
-	array_agg(distinct usr_d.user_role),
-	array_agg(distinct usr_d.brand),
-	array_agg(distinct cln_d.megaregion),
-	array_agg(distinct cln_d.client_id),
-	array_agg(distinct cln_d.client_city),
-	array_agg(distinct cln_d.client_address),
-	array_agg(distinct cln_d.client_program),
-	array_agg(distinct cln_d.client_type)
+	array_agg(distinct usr_d.user_function) as "Function",
+	array_agg(distinct usr_d.user_role) as "Role",
+	array_agg(distinct usr_d.brand) as "Brand",
+	array_agg(distinct cln_d.megaregion) as "Megaregion",
+	array_agg(distinct cln_d.client_id) as "Client_ID",
+	array_agg(distinct cln_d.client_city) as "Client_City",
+	array_agg(distinct cln_d.client_address) as "Client_Address",
+	array_agg(distinct cln_d.client_program) as "Client_Program",
+	array_agg(distinct cln_d.client_type) as "Client_Type"
 from users as usr
 	left join users_dataset as usr_d on usr.id = usr_d.user_id
 	left join clients_dataset as cln_d on usr.id = cln_d.user_id
 group by usr.id
 order by usr.id	
+
