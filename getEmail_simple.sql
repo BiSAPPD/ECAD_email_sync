@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION f_IsValidEmail(text) returns BOOLEAN AS
 'select $1 ~ ''^[^@\s]+@[^@\s]+(\.[^@\s]+)+$'' as result
 ' LANGUAGE sql;
 
-WITH RECURSIVE list_emails (email)
+WITH  list_emails (email)
 AS ( 
 select email , brand_LP , brand_MX, brand_KR, brand_RD, brand_ES, role, com_mreg
 from dblink('dbname=loreal', 
@@ -38,9 +38,8 @@ sln.com_mreg
 from salons as sln
 Where char_length(sln.email) > 5')
 AS  (email text, brand_LP text, brand_MX text, brand_KR text, brand_RD text, brand_ES text, role text, com_mreg text)
-
-
-) SELECT distinct lml.email, 
+) 
+SELECT distinct lml.email, 
 Concat( (Case when lml_lp.brand_lp is not Null then 'LP; ' end), 
 	(Case when lml_mx.brand_mx is not Null then 'MX; ' end),
 	(Case when lml_kr.brand_kr is not Null then 'KR; ' end),
@@ -52,11 +51,20 @@ Concat( (Case when lml_lp.brand_lp is not Null then 'LP; ' end),
 	(case when lml.role in ('%partimer%', 'partner', 'studio_manager' , 'studio_administrator') then 'educater' else
 	(case when lml.role in('%representative%', 'cs', 'dr', 'supervisor') then 'commercial' else 
 	(case when lml.role in ('salon') then 'salon' else 'master'
-	end)end)end)end)end) as role,
-	
+	end)end)end)end)end) as role_nm,
 
-lml_lp.com_mreg
+(case 	
+when lml.role like 'salon_manager' then '3' 
+when lml.role like '%technolog%' then '1' 
+when lml.role in ('%partimer%', 'partner', 'studio_manager' , 'studio_administrator') then '1' 
+when lml.role in('%representative%', 'cs', 'dr', 'supervisor') then '2' 
+when lml.role in ('salon') then '4' 
+else '5'
+	end)  as prioritet,
 
+
+lml_lp.com_mreg,
+row_number() over (partition by lml.email order by 4) as num
 
   FROM list_emails as lml
   left join list_emails as lml_lp on lml.email = lml_lp.email and lml_lp.brand_lp = 'loreal'
@@ -65,11 +73,13 @@ lml_lp.com_mreg
   left join list_emails as lml_rd on lml.email = lml_rd.email and lml_rd.brand_rd = 'redken'
   left join list_emails as lml_es on lml.email = lml_es.email and lml_es.brand_es = 'essie'
 
+ 
   
-
-  
-  Where f_IsValidEmail(lml.email) 
+  Where f_IsValidEmail(lml.email)
 group by lml.email, lml_lp.brand_lp, lml_mx.brand_mx, lml_kr.brand_kr, lml_rd.brand_rd, lml_es.brand_es, lml.role, 
 lml_lp.com_mreg, lml_mx.com_mreg, lml_kr.com_mreg, lml_rd.com_mreg, lml_es.com_mreg 
 
- order by lml.email
+ order by  lml.email, 4
+
+
+
