@@ -5,8 +5,9 @@ with
 users_dataset as (
 	select 
 		usrp.user_id, 
-		rol."name" as user_function, 
-		(case when pst."name" = 'Стилист' then 'Мастер' else pst."name" end) as user_role, 
+		(case when char_length(trim(rol."name")) > 2 then rol."name" else 'Сотрудник салона' end) as user_function, 
+		(case when pst."name" = 'Стилист' then 'Мастер' else 
+			(case when char_length(trim(pst."name")) > 2 then pst."name" else 'Мастер' end) end) as user_role, 
 		brn.code as brand
 	from user_posts as usrp
 		left join posts as pst on usrp.post_id = pst.id
@@ -61,7 +62,7 @@ select
 from users as usr
 	left join users_dataset as usr_d on usr.id = usr_d.user_id
 	left join clients_dataset as cln_d on usr.id = cln_d.user_id
-where f_IsValidEmail(usr.email)
+where f_IsValidEmail(usr.email) and usr.deleted_at is null
 group by usr.id
 union all
 select distinct
@@ -85,7 +86,7 @@ select distinct
 	array_to_string(array_agg(distinct cln_d.client_website), '; ') as "client_website"
 from salons as sln
 	left join clients_dataset as cln_d on sln.id = cln_d.client_id
-where f_IsValidEmail(sln.email)	
+where f_IsValidEmail(sln.email)	and sln.deleted_at is null
 group by sln.id
 
 
