@@ -4,17 +4,20 @@ CREATE OR REPLACE FUNCTION f_IsValidEmail(text) returns BOOLEAN AS
 with 
 users_dataset as (
 	select 
-		usrp.user_id, 
-		(case when char_length(trim(rol."name")) > 2 then rol."name" else 'Сотрудник салона' end) as user_function, 
-		(case when pst."name" = 'Стилист' then 'Мастер' else 
-			(case when char_length(trim(pst."name")) > 2 then pst."name" else 'Мастер' end) end) as user_role, 
-		brn.code as brand
-	from user_posts as usrp
-		left join posts as pst on usrp.post_id = pst.id
+		usp.user_id,
+		rol."name"  as user_function, 
+		(case when pst."name" = 'Стилист' then 'Мастер' else pst."name" end) as user_role, 
+		brn.code as brand,
+		rgn2."name" as megaregion
+	from user_posts as usp
+		left join posts as pst on usp.post_id = pst.id 
 		left join roles as rol on pst.role_id = rol.id
-		left join user_post_brands as usrpb on usrp.user_id =  usrpb.user_post_id
-		left join brands as brn on usrpb.brand_id = brn.id
-	order by usrp.user_id),
+		left join user_post_brands as upb on usp.id = upb.user_post_id 
+		left join regions as rgn on rgn.id = upb.region_id
+		left join region_hierarchies as rgn_h on upb.region_id = rgn_h.descendant_id and rgn_h.generations = (rgn.region_level - 4)
+		left join regions as rgn2 on rgn_h.ancestor_id = rgn2.id
+		left join brands as brn on upb.brand_id = brn.id or rgn.brand_id = brn.id
+	order by usp.user_id),
 clients_dataset as (
 	select
 		usr_sln.user_id,
@@ -47,10 +50,14 @@ select
 	usr.first_name, 
 	usr.last_name, 
 	'B2B' as Base,
-	array_to_string(array_agg(distinct usr_d.user_function), '; ') as "Function",
-	array_to_string(array_agg(distinct usr_d.user_role), '; ') as "Role",
+	array_to_string(array_agg(distinct 
+		(case when usr_d.user_function = 'Сотрудник салона' and cln_d.client_id is null then 'Частный Мастер' else 
+			(case when usr_d.user_function is null then 'Частный Мастер' else usr_d.user_function end)end)), '; ') as "Function",
+	array_to_string(array_agg(distinct 
+		(case when usr_d.user_role is null then 'Частный Мастер' else usr_d.user_role end)), '; ') as "Role",
 	array_to_string(array_agg(distinct usr_d.brand), '; ') as "Brand",
-	array_to_string(array_agg(distinct cln_d.megaregion), '; ') as "Megaregion",
+	array_to_string(array_agg(distinct 
+		(case when cln_d.megaregion is null then usr_d.megaregion else cln_d.megaregion end)), '; ') as "Megaregion",
 	array_to_string(array_agg(distinct cln_d.client_id), '; ') as "Client_ID",
 	array_to_string(array_agg(distinct cln_d.client_city), '; ') as "Client_City",
 	array_to_string(array_agg(distinct cln_d.client_address), '; ') as "Client_Address",
@@ -72,7 +79,7 @@ select distinct
 	'', 
 	'', 
 	'',
-	'client'  as "Function",
+	'Клиент'  as "Function",
 	array_to_string(array_agg(distinct cln_d.client_type), '; ') as "Role",
 	array_to_string(array_agg(distinct cln_d.brand), '; ') as "Brand",
 	array_to_string(array_agg(distinct cln_d.megaregion), '; ') as "Megaregion",
@@ -88,5 +95,3 @@ from salons as sln
 	left join clients_dataset as cln_d on sln.id = cln_d.client_id
 where f_IsValidEmail(sln.email)	and sln.deleted_at is null
 group by sln.id
-
-
