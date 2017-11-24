@@ -32,9 +32,9 @@ clients_dataset as (
 		sln.phone as client_phone,
 		sln.url as client_website,
 		brn.code as brand
-	from users_salons as usr_sln
-		left join salons as sln on usr_sln.salon_id = sln.id
-		left join regions_salons as rgn_sln on usr_sln.salon_id = rgn_sln.salon_id
+	from salons as sln 
+		left join users_salons as usr_sln on usr_sln.salon_id = sln.id
+		left join regions_salons as rgn_sln on sln.id = rgn_sln.salon_id
 		left join region_hierarchies as rgn_h on rgn_sln.region_id = rgn_h.descendant_id and rgn_h.generations = 2
 		left join regions as rgn on rgn_h.ancestor_id = rgn.id
 		left join salons_special_programs as sln_spc on usr_sln.id = sln_spc.salon_id
@@ -55,14 +55,15 @@ seminars_count as (
 ---
 ---
 select
-	usr.id as "User_ID",
 	lower(usr.email) as "Email Address",
-	usr.mobile_number,
-	usr.first_name, 
-	usr.last_name,
-	to_char(usr.last_request_at, 'DD.MM.YY')  as last_reauest_ecad,
-	usr.login_count as login_count_ecad,
-	'B2B' as Base,
+	array_to_string(array_agg(distinct usr.id ), '; ') as "User_ID",
+	array_to_string(array_agg(distinct usr.mobile_number), '; ') as mobile_number,
+	array_to_string(array_agg(distinct usr.first_name), '; ') as first_name, 
+	array_to_string(array_agg(distinct usr.last_name ), '; ') as last_name, 
+	array_to_string(array_agg(distinct to_char(usr.last_request_at, 'DD.MM.YY') ), '; ')  as last_reauest_ecad,
+	SUM(usr.login_count) as login_count_ecad,
+	array_to_string(array_agg(distinct
+		(case when usr_d.user_function = 'Сотрудник салона' then 'B2B' else 'internal' end)), '; ') as Base,
 	array_to_string(array_agg(distinct 
 		(case when usr_d.user_function = 'Сотрудник салона' and cln_d.client_id is null then 'Частный Мастер' else 
 			(case when usr_d.user_function is null then 'Частный Мастер' else usr_d.user_function end)end)), '; ') as "Function",
@@ -79,12 +80,12 @@ select
 	array_to_string(array_agg(distinct cln_d.client_email), '; ') as "client_email",
 	array_to_string(array_agg(distinct cln_d.client_phone), '; ') as "client_phone",
 	array_to_string(array_agg(distinct cln_d.client_website), '; ') as "client_website",
-	s1.cnt as "Paid Seminars in Studio",
-	s2.cnt as "Free Seminars in Studio",
-	s3.cnt as "Consultations",
-	s4.cnt as "Brand Day",
-	s5.cnt as "Seminars in Salon",
-	s6.cnt as "LSA"
+	SUM(s1.cnt) as "Paid Seminars in Studio",
+	SUM(s2.cnt) as "Free Seminars in Studio",
+	SUM(s3.cnt) as "Consultations",
+	SUM(s4.cnt) as "Brand Day",
+	SUM(s5.cnt) as "Seminars in Salon",
+	SUM(s6.cnt) as "LSA"
 from users as usr
 	left join users_dataset as usr_d on usr.id = usr_d.user_id
 	left join clients_dataset as cln_d on usr.id = cln_d.user_id
@@ -95,12 +96,12 @@ from users as usr
 	left join seminars_count as s5 on usr.id = s5.user_id and s5.name = 'Seminars in Salon'
 	left join seminars_count as s6 on usr.id = s6.user_id and s6.name = 'LSA'
 where f_IsValidEmail(usr.email) and usr.deleted_at is null
-group by usr.id, s1.cnt, s2.cnt, s3.cnt, s4.cnt, s5.cnt, s6.cnt
+group by usr.id
 union all
 select distinct
-	sln.id,
 	lower(sln.email),
-	sln.phone,
+	array_to_string(array_agg(distinct sln.id), '; '), 
+	array_to_string(array_agg(distinct sln.phone) , '; '),
 	'', 
 	'',
 	'',
@@ -126,6 +127,7 @@ select distinct
 	0
 from salons as sln
 	left join clients_dataset as cln_d on sln.id = cln_d.client_id
-where f_IsValidEmail(sln.email)	and sln.deleted_at is null
-group by sln.id
+	left join users as usr1 on sln.email = usr1.email
+where f_IsValidEmail(sln.email) and sln.deleted_at is null and usr1.email is null
+group by sln.email
 
