@@ -45,7 +45,8 @@ seminars_count as (
 	select
 		prt.user_id, 
 		smrkt.name,
-		count(prt.user_id) as cnt
+		count(prt.user_id) as cnt,
+		array_to_string(array_agg(distinct smr.name ), '; ') as seminars
 	from participations as prt 
 		left join seminar_events as sme on prt.seminar_event_id = sme.id
 		left join seminars as smr on sme.seminar_id = smr.id
@@ -61,7 +62,7 @@ select
 	array_to_string(array_agg(distinct usr.first_name), '; ') as first_name, 
 	array_to_string(array_agg(distinct usr.last_name ), '; ') as last_name, 
 	array_to_string(array_agg(distinct to_char(usr.last_request_at, 'DD.MM.YY') ), '; ')  as last_reauest_ecad,
-	SUM(usr.login_count) as login_count_ecad,
+	SUM(usr.login_count)::text as login_count_ecad,
 	array_to_string(array_agg(distinct
 		(case when usr_d.user_function = 'Сотрудник салона' then 'B2B' else 'internal' end)), '; ') as Base,
 	array_to_string(array_agg(distinct 
@@ -80,12 +81,13 @@ select
 	array_to_string(array_agg(distinct cln_d.client_email), '; ') as "client_email",
 	array_to_string(array_agg(distinct cln_d.client_phone), '; ') as "client_phone",
 	array_to_string(array_agg(distinct cln_d.client_website), '; ') as "client_website",
-	SUM(s1.cnt) as "Paid Seminars in Studio",
-	SUM(s2.cnt) as "Free Seminars in Studio",
-	SUM(s3.cnt) as "Consultations",
-	SUM(s4.cnt) as "Brand Day",
-	SUM(s5.cnt) as "Seminars in Salon",
-	SUM(s6.cnt) as "LSA"
+	(case when SUM(s1.cnt) > 0 then SUM(s1.cnt) else 0 end)::text as "Paid Seminars in Studio",
+	(case when SUM(s2.cnt) > 0 then SUM(s2.cnt) else 0 end)::text as "Free Seminars in Studio",
+	(case when SUM(s3.cnt) > 0 then SUM(s3.cnt) else 0 end)::text as "Consultations",
+	(case when SUM(s4.cnt) > 0 then SUM(s4.cnt) else 0 end)::text as "Brand Day",
+	(case when SUM(s5.cnt) > 0 then SUM(s5.cnt) else 0 end)::text as "Seminars in Salon",
+	(case when SUM(s6.cnt) > 0 then SUM(s6.cnt) else 0 end)::text as "LSA",
+	s1.seminars
 from users as usr
 	left join users_dataset as usr_d on usr.id = usr_d.user_id
 	left join clients_dataset as cln_d on usr.id = cln_d.user_id
@@ -96,18 +98,20 @@ from users as usr
 	left join seminars_count as s5 on usr.id = s5.user_id and s5.name = 'Seminars in Salon'
 	left join seminars_count as s6 on usr.id = s6.user_id and s6.name = 'LSA'
 where f_IsValidEmail(usr.email) and usr.deleted_at is null
-group by usr.id
+group by usr.id, s1.seminars
+--
 union all
+--
 select distinct
-	lower(sln.email),
-	array_to_string(array_agg(distinct sln.id), '; '), 
-	array_to_string(array_agg(distinct sln.phone) , '; '),
-	'', 
-	'',
-	'',
-	0,
-	'B2B',
-	'Клиент'  as "Function",
+	lower(sln.email)::text,
+	array_to_string(array_agg(distinct sln.id), '; ')::text, 
+	array_to_string(array_agg(distinct sln.phone) , '; ')::text,
+	''::text, 
+	''::text,
+	''::text,
+	''::text,
+	'B2B'::text,
+	'Клиент'::text  as "Function",
 	array_to_string(array_agg(distinct cln_d.client_type), '; ') as "Role",
 	array_to_string(array_agg(distinct cln_d.brand), '; ') as "Brand",
 	array_to_string(array_agg(distinct cln_d.megaregion), '; ') as "Megaregion",
@@ -119,15 +123,15 @@ select distinct
 	array_to_string(array_agg(distinct cln_d.client_email), '; ') as "client_email",
 	array_to_string(array_agg(distinct cln_d.client_phone), '; ') as "client_phone",
 	array_to_string(array_agg(distinct cln_d.client_website), '; ') as "client_website",
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
+	''::text,
+	''::text,
+	''::text,
+	''::text,
+	''::text,
+	''::text,
+	''::text
 from salons as sln
 	left join clients_dataset as cln_d on sln.id = cln_d.client_id
 	left join users as usr1 on sln.email = usr1.email
 where f_IsValidEmail(sln.email) and sln.deleted_at is null and usr1.email is null
 group by sln.email
-
